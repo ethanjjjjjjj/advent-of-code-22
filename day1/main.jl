@@ -1,8 +1,3 @@
-f=open("input.txt","r")
-lines=read(f,String)
-close(f)
-sums=eachmatch(r"(((\d)+\n)+)",lines) |> 
-    collect .|> (x->x.match) .|> 
-    split .|> (x->parse.(Int64,x)) .|> 
-    sum |> x->sort(x,rev=true)
-display(sums[1:3])
+open("input.txt","r") do f
+eachmatch(r"((\d+\n)+)",read(f,String)) .|> (sum∘(x->parse.(Int32,x))∘split∘(x->x.match)) |> (x->sort(x,rev=true)) |> (x->(x[1],sum(x[1:3]))) |> display
+end
