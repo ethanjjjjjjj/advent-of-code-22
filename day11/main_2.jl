@@ -1,8 +1,11 @@
+
+using Pipe
+
 #monkey struct
 mutable struct Monkey
     id::Int64
     items::Vector{Int64}
-    operation::String
+    operation
     test::Int64
     ifT::Int64
     ifF::Int64
@@ -35,6 +38,11 @@ for monkey in monkeyslist
     ifT=parse.(Int64,ifT)
     ifF=parse.(Int64,ifF)
 
+    operation="old -> "*operation
+    operation=Meta.parse(operation)
+    operation=eval(operation)
+    
+
     #push values to lists
     push!(monkeys,Monkey(monkeynum,startinglist,operation,test,ifT,ifF,0))
     push!(testvalues,test)
@@ -45,13 +53,12 @@ end
 reduction = prod(testvalues)
 
 
-
 function round(monkeys::Vector{Monkey})
     for monkey in monkeys
         while !isempty(monkey.items)
-            item=popfirst!(monkey.items)
-            operation=replace(monkey.operation,"old"=>item)
-            new=eval(Meta.parse(operation))
+            new= popfirst!(monkey.items)
+            new= monkey.operation(new) 
+            
             new=new%reduction
             monkey.inspects+=1
             pushmonkey = (new % monkey.test==0) ? monkeys[monkey.ifT+1].items : monkeys[monkey.ifF+1].items
@@ -72,4 +79,6 @@ function solve()
 end
 
 
-println(solve())
+using BenchmarkTools
+
+display(@benchmark solve())
