@@ -54,7 +54,7 @@ function round(monkeys::Vector{Monkey})
             new=eval(Meta.parse(operation))
             new=new%reduction
             monkey.inspects+=1
-            pushmonkey =  (new % monkey.test==0) ? monkeys[monkey.ifT+1].items : monkeys[monkey.ifF+1].items
+            pushmonkey = (new % monkey.test==0) ? monkeys[monkey.ifT+1].items : monkeys[monkey.ifF+1].items
             push!(pushmonkey,new)
         end
     end

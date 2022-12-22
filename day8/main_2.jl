@@ -12,9 +12,6 @@ numbersgrid= parse.(Int32,Iterators.flatten(lines))
 numbersgrid=reshape(numbersgrid,dims)
 numbersgrid=transpose(numbersgrid)
 
-using BenchmarkTools
-using LoopVectorization
-
 function distanceToBigger(n::Int32,ls::Vector{Int32})
     for (index,item) in enumerate(ls)
         if item>=n
@@ -26,7 +23,7 @@ function distanceToBigger(n::Int32,ls::Vector{Int32})
 end
 
 
-function trees(n)::Int32
+function trees(numbersgrid)::Int32
     total=0
     for rowindex = 1:dims[1]
         for colindex=1:dims[2]

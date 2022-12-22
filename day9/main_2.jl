@@ -1,4 +1,6 @@
 translations=Dict('R'=>[0,1],'U'=>[1,0],'L'=>[0,-1],'D'=>[-1,0])
+length=10
+
 
 function magnitude(A::Vector{Int64})
     sum(A.^2)/length(A)
@@ -29,20 +31,20 @@ lines=read(f,String)
 
 function movehead()
     visits=Set()
-    tailabsolute=fill([1,1],10)
+    tailabsolute=fill([1,1],length)
     for line in split(lines,"\n")
         instruction=match(r"(\S) (\d+)",line) 
         direction=instruction[1][1]
         number=parse(Int32,instruction[2])
         for i=1:number
             tailabsolute[1]+=translations[direction]
-            for tailindex=2:10
+            for tailindex=2:length
                 tailrelative=tailabsolute[tailindex-1]-tailabsolute[tailindex]
                 if magnitude(tailrelative)>1
                     tailabsolute[tailindex]+=clamp.(tailrelative,-1,1)
                 end
             end
-            push!(visits,tailabsolute[10])
+            push!(visits,tailabsolute[length])
         end
     end
     return length(visits)
