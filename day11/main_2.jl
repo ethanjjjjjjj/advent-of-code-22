@@ -71,7 +71,5 @@ function solve()
     return prod(inspects[1:2])
 end
 
-using BenchmarkTools
 
-
-println(@btime solve())
+println(solve())
