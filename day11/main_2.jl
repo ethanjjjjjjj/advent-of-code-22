@@ -79,6 +79,4 @@ function solve()
 end
 
 
-using BenchmarkTools
-
-display(@benchmark solve())
+display(solve())

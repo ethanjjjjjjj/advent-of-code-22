@@ -1,25 +1,21 @@
 
-f=open("sack.txt","r")
+f=open("input.txt","r")
 
 lines=read(f,String)
 lines=split(lines,"\n")
-badges=[]
 
-for i in 1:3:length(lines)-1
-    for character in lines[i]
-        if character in lines[i+1] && character in lines[i+2]
-            push!(badges,character)
-            break
+function solve()
+    score=0
+    for i in 1:3:length(lines)-1
+        for character in lines[i]
+            if character in lines[i+1] && character in lines[i+2]
+                itemval=Int(character)
+                score+=itemval<97 ? itemval-65+27 : itemval-96
+                break
+            end
         end
     end
+    return score
 end
-scores=[]
-for item in badges
-    itemval=Int(item)
-    if itemval>=65 && itemval<97
-        push!(scores,itemval-65+27)
-    else
-        push!(scores,itemval-96)
-    end
-end
-println(sum(scores))
+
+display(solve())

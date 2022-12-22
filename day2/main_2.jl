@@ -3,6 +3,9 @@
 #scissors C Z 3
 
 scores=Dict('A'=>1,'B'=>2,'C'=>3,'X'=>1,'Y'=>2,'Z'=>3)
+wins=Dict('A'=>'B','B'=>'C','C'=>'A')
+losses=Dict('A'=>'C','B'=>'A','C'=>'B')
+
 
 function scorefunc(x::Char,y::Char)::Int32
     score=0
@@ -22,50 +25,25 @@ function scorefunc(x::Char,y::Char)::Int32
 end
 
 
-function findwin(x::Char)::Char
-    if x=='A'
-        return 'B'
-    elseif x=='B'
-        return 'C'
-    elseif x=='C'
-        return 'A'
-    end
-end
-
-
-function findDraw(x::Char)::Char
-    return x
-
-end
-
-
-function findLoss(x::Char)::Char
-    if x=='B'
-        return 'A'
-    elseif x=='C'
-        return 'B'
-    elseif x=='A'
-        return 'C'
-    end
-end
-
-
-open("input.txt","r") do f
-    out=read(f,String) #convert to chars
+f=open("input.txt","r")
+out=read(f,String)
+function solve()
     turns=((x->split.(x," "))∘split)(out,"\n",keepempty=false)
     play=""
     tot_score=0
     for item in turns
         item=only.(item)
         if item[2]=='X'
-            play=findLoss(item[1])
+            play=losses[item[1]]
         elseif item[2]=='Y'
-            play=findDraw(item[1])
+            play=item[1]
         elseif item[2]=='Z'
-            play=findwin(item[1])
+            play=wins[item[1]]
         end
         score=scorefunc(item[1],play)
         tot_score+=score
     end
-    println(tot_score)
+    return
 end
+
+display(solve())

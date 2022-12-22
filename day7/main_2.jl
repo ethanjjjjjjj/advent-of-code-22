@@ -1,7 +1,4 @@
 using AbstractTrees
-
-
-
 mutable struct FileNode
     value::String
     size::Int32
@@ -21,9 +18,7 @@ AbstractTrees.parent(n::Union{DirNode,FileNode}) = n.parent
 
 
 function sizeNode(n::Union{DirNode,FileNode})
-
     size=0
-
     if typeof(n)==FileNode
         size=n.size
     else
@@ -35,33 +30,23 @@ function sizeNode(n::Union{DirNode,FileNode})
 
 end
 
-
 function dfs(n::DirNode)::Vector{DirNode}
     dirs=[]
 
     for node in n.children
         if typeof(node)==DirNode
-            dirs=vcat(dirs,dfs(node))
-            
+            dirs=vcat(dirs,dfs(node)) 
         end
     end
     dirs=vcat(dirs,n)
     return dirs
 end
 
-
-
-
-
-tree=DirNode("/",[],Nothing())
 f=open("input.txt","r")
-
 lines=read(f,String)
-
-
-
 lines=split(lines,"\n")
 
+tree=DirNode("/",[],Nothing())
 currentNode=tree
 
 for line in lines

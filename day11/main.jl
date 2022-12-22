@@ -13,8 +13,6 @@ end
 lines=read(f,String)
 monkeyslist=split(lines,"\n\n")
 
-
-
 monkeys::Vector{Monkey}=[]
 
 for monkey in monkeyslist

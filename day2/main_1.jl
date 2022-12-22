@@ -1,11 +1,9 @@
-#rock A X 1
-#paper B Y 2
-#scissors C Z 3
-
 scores=Dict("A"=>1,"B"=>2,"C"=>3,"X"=>1,"Y"=>2,"Z"=>3)
 
-open("input.txt","r") do f
-    out=read(f,String)
+f=open("input.txt","r") 
+out=read(f,String)
+
+function solve()
     turns=((x->split.(x," "))∘split)(out,"\n",keepempty=false)
     score=0
     for game in turns
@@ -16,5 +14,7 @@ open("input.txt","r") do f
             score+=3
         end
     end
-    println(score)
+    return score
 end
+
+display(solve())
