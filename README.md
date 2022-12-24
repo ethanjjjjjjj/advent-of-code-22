@@ -10,6 +10,6 @@ All runtimes exclude reading in the input file, only processing time.
 | Day    | Runtime (ms) |
 | ----------- | ----------- |
 | Day 1      |    0.396    |
-| Day 2   |  1.880 +   2.620     |
+| Day 2   |  0.167 +   0.261     |
 | Day 3 | 0.378 + 0.662 |
 | Day 4 | 1.380 + 1.401|
