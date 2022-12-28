@@ -1,44 +1,17 @@
-@inline function scorefunc(x::Char,y::Char)::Int32
-    scores=Base.ImmutableDict('A'=>1,'B'=>2,'C'=>3,'X'=>1,'Y'=>2,'Z'=>3)
-
-    score=0
-    if x==y
-        score+=3
-    elseif scores[x]==1 && scores[y]==3 #scissors lose to rock
-        score+=0
-    elseif scores[x]==3 && scores[y]==1 #rock win to scissors
-        score+=6
-    elseif scores[x]>scores[y] # you lose to opponent
-        score+=0
-    elseif scores[y]>scores[x] #you win to opponent
-        score+=6
-    end
-    score+=scores[y]
-    return score
-end
-
 
 f=open("input.txt","r")
 out=read(f,String)
-function solve(out::String)
-    wins=Base.ImmutableDict('A'=>'B','B'=>'C','C'=>'A')
-    losses=Base.ImmutableDict('A'=>'C','B'=>'A','C'=>'B')
-    turns=split(out::String,"\n")
-    play=""
+function solve(lines::String)
     tot_score=0
-    for turn in turns
-        item=(turn[1],turn[3])
-        item=only.(item)
-        if item[2]=='X'
-            play=losses[item[1]]
-        elseif item[2]=='Y'
-            play=item[1]
-        elseif item[2]=='Z'
-            play=wins[item[1]]
-        end
-        tot_score+=scorefunc(item[1],play)
+    @inbounds @simd ivdep for i=1:4:length(lines)
+        @inbounds l=Int(lines[i])-64
+        @inbounds r=Int(lines[i+2])-87
+        win=ifelse(l>2,l+4,l+7)
+        lose=ifelse(l>1,l-1,l+2)
+        tot_score+=ifelse(r==1,lose,ifelse(r==2,l+3,win))
     end
     return tot_score 
 end
 
-display(solve(out))
+@assert solve(out)==13433
+
