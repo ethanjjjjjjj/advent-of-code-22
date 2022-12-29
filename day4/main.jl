@@ -1,23 +1,26 @@
 f=open("input.txt","r")
 
-liness=read(f,String)
+out=read(f,String)
 
 using Pipe
+function splitline(s::Union{String,SubString{String}},delim::Char)
+    index=1
+    @inbounds while s[index+1]!=delim
+        index+=1
+    end
+    @inbounds return SubString(s,1,index) , SubString(s,index+2,length(s))
+end
 
-function solve()
-    lines=split(liness,"\n")
+function solve(out::String)
+    lines=split(out,"\n")
     count=0
-    for line in lines
-
-        out=@pipe collect(eachmatch(r"(\d+)",line)) .|> x->x[1] 
-        low1,high1,low2,high2=parse.(Int32,out)
-        
-        if (low1<=low2 && high1>=high2) || (low2<=low1 && high2>=high1)
-            count+=1
-        end
+    @inbounds @simd ivdep for line in lines
+        (low1,high1),(low2,high2)=@pipe splitline(line,',') .|> splitline.(_,'-') .|> parse.(Int,_)
+        count+=(low1<=low2 && high1>=high2) || (low2<=low1 && high2>=high1)
     end
 
     return count
 end
 
-display(solve())
+
+@assert solve(out)==503
