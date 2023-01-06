@@ -8,7 +8,7 @@ f=open("example2.txt")
 out=read(f,String)
 
 
-grid=fillgrid(out)
+grid=fillgrid(out,2)
 testgrid=fill(false,12,10)
 testgrid[4,5]=true
 testgrid[5,5]=true
@@ -52,6 +52,31 @@ generatedmoves=proposedmoves(copy(grid2),N)
 
 
 
+#test number of elves does not change
+begin
+    f=open("example2.txt")
+    out=read(f,String)
+
+    local grid=fillgrid(out,4)
+        
+    sizey,sizex=size(grid)
+    local newgrid=fill(false,sizey,sizex)
+    local checkfirst=N
+
+    elfcount=sum(grid)
+    for i=1:100
+        step!(grid,newgrid,checkfirst)
+        grid,newgrid=newgrid,grid
+        @test sum(grid)==elfcount
+        checkfirst=Direction(checkorder(checkfirst)[2])
+    end
+end
+
+f=open("example.txt")
+out=read(f,String)
+
+@test solve(out,10)==110
+
 # performance
 
 using BenchmarkTools
@@ -65,7 +90,15 @@ grid=fillgrid(out)
 suite["generatemoves"] = @benchmarkable generatemoves($grid,$N)
 suite["step"]=@benchmarkable step!($grid,$newgrid,$N)
 
-tune!(suite,seconds=10,evals=10)
-results=run(suite)
-display(suite)
-display(results)
+
+function runbench()
+    tune!(suite,seconds=10,evals=10)
+    results=run(suite)
+    display(results)
+end
+
+#runbench()
+
+f=open("example.txt")
+out=read(f,String)
+
