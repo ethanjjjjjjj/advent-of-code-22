@@ -26,13 +26,13 @@ function symdir(d::Direction)
     end
 end
 
-function fillgrid(out::String)
+function fillgrid(out::String,scale=2)
 
     lines=split(out,"\n")
     inputdims=(length(lines),length(lines[1]))
-    gridsize=inputdims.*2
+    gridsize=inputdims.*scale
     grid=fill(false ,gridsize) #compare datatypes
-    innergridstart=Int.(ceil.(inputdims./2))
+    innergridstart=Int.(floor.(gridsize./2)).-Int.(floor.(inputdims./2))
     innergridend=innergridstart.+inputdims
     innergrid=@view grid[innergridstart[1]:innergridend[1],innergridstart[2]:innergridend[2]]
     for line=1:inputdims[1],char=1:inputdims[2]
@@ -61,10 +61,10 @@ function proposedmoves(grid,checkfirst)
                     moves[(y,x)]=(y,x).+movetranslations[Direction(dir)]
                     break
                 end
-                if !((y,x) in keys(moves))
-                    moves[(y,x)]=(y,x)
-                end
             end
+        end
+        if !((y,x) in keys(moves)) && grid[y,x]
+            moves[(y,x)]=(y,x)
         end
     end
     return moves  
@@ -117,30 +117,40 @@ end
 
 function smallestRectangle(grid)
     sizey,sizex=size(grid)
-    sx,sy,bx,by.=0
+    sx,sy,bx,by=sizey,sizex,0,0
     for y=1:sizey,x=1:sizex
 
-        
+        if grid[y,x]
+            sx=min(sx,x)
+            sy=min(sy,y)
+            bx=max(bx,x)
+            by=max(by,y)
+        end
+
     end
+    return @view grid[sy:by,sx:bx]
 end
 
 
-function solve(out)
+function solve(out,steps)
     checkfirst=N
-    grid=fillgrid(out)
-    sizey,sizex=size(grid)
-    println("start grid")
-    newgrid=fill(false,sizey,sizex)
+    grid=fillgrid(out,4)
     
+    sizey,sizex=size(grid)
+    newgrid=fill(false,sizey,sizex)
 
-
-    for i=1:10
-        @time step!(grid,newgrid,checkfirst)
+    for i=1:steps
+        step!(grid,newgrid,checkfirst)
         grid,newgrid=newgrid,grid
         checkfirst=Direction(checkorder(checkfirst)[2])
     end
 
+    smallrect=smallestRectangle(grid)
+    ans=prod(size(smallrect))-sum(smallrect)
+    return ans
 end
 
+f=open("input.txt")
+out=read(f,String)
 
-
+display(solve(out,10))
