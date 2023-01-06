@@ -1,4 +1,6 @@
 
+
+
 @enum Direction begin
     EMPTY=0
     N=1
@@ -10,7 +12,7 @@ end
 
 movetranslations=Dict(N=>(-1,0),S=>(1,0),W=>(0,-1),E=>(0,1),STAY=>(0,0))
 
-function checkorder(d::Direction) #defines order to check directions in based on what you're checking first, returns no range if direction is empty
+function checkorder(d::Direction)::Vector{Int64} #defines order to check directions in based on what you're checking first, returns no range if direction is empty
     if d==EMPTY return [] end
     D=Int(d)
     return vcat(D:4,1:D-1)
@@ -26,7 +28,7 @@ function symdir(d::Direction)
     end
 end
 
-function fillgrid(out::String,scale=2)
+function fillgrid(out::String,scale::Int64=2)::Array{Bool,2}
 
     lines=split(out,"\n")
     inputdims=(length(lines),length(lines[1]))
@@ -41,45 +43,58 @@ function fillgrid(out::String,scale=2)
     return grid
 end
 
+function anyany(grid,y,x)::Bool
 
-function proposedmoves(grid,checkfirst)
+    for i=(-1,0,1)
+        for j=(-1,0,1)
+            if i!=0 && j!=0 && grid[y+i,x+j]
+                return true
+            end
+        end
+    end
+    return false
+end
+
+function proposedmoves(grid::Array{Bool,2},checkfirst::Direction)::Dict{Tuple{Int64, Int64}, Tuple{Int64, Int64}}
+    movetranslations=((-1,0),(1,0),(0,-1),(0,1),(0,0))
     sizey,sizex=size(grid)
     moveorder=checkorder(checkfirst)
     
-    moves=Dict()
-    for y=2:sizey-1,x=2:sizex-1
-        current=@view grid[y-1:y+1,x-1:x+1]
+    moves::Dict{Tuple{Int64, Int64}, Tuple{Int64, Int64}}=Dict()
+    @inbounds for y=2:sizey-1,x=2:sizex-1
+        @inbounds current=@view grid[y-1:y+1,x-1:x+1]
         n=@view current[1,1:3]
         s=@view current[3,1:3]
         w=@view current[1:3,1]
         e=@view current[1:3,3]
-        views=[n,s,w,e]
+        views=(n,s,w,e)
+        #if grid[y,x] display(current) end
         #find possible move, populate proposed move grid
-        if any(any.((n,s,e,w))) && (x->Int(x)!=0)(grid[y,x]) #if nighbors are not empty and neither is the current cell
+        @inbounds if grid[y,x] && any(any.(views))  #if nighbors are not empty and neither is the current cell   ##any causes lots of allocations and is really slow
             for dir in moveorder
-                if !(any(map(x->Int(x)!=0,views[dir])))  #if there's any neighbors in the current search direction
-                    moves[(y,x)]=(y,x).+movetranslations[Direction(dir)]
+                if !(any(views[dir]))  #if there's any neighbors in the current search direction
+                    @inbounds moves[(y,x)]=(y,x).+movetranslations[dir]
                     break
                 end
             end
         end
-        if !((y,x) in keys(moves)) && grid[y,x]
-            moves[(y,x)]=(y,x)
+        @inbounds if !((y,x) in keys(moves)) && grid[y,x]
+            moves[(y,x)::Tuple{Int64, Int64}]=(y,x)::Tuple{Int64, Int64}
         end
     end
     return moves  
 end
 
-function removeConflicts(moves)
+function removeConflicts(moves)::Dict{Tuple{Int64, Int64}, Tuple{Int64, Int64}}
     #check move grid for conflicting moves
-    moveto=Dict()
+    moveto::Dict{Tuple{Int64, Int64}, Tuple{Int64, Int64}}=Dict()
     invalid=[]
     #push destination=>from to moveto dict, if that key is already found, then add the pairing to the invalid array
     for item in moves
-        if item[2] in keys(moveto)
+        @inbounds if item[2] in keys(moveto)
             push!(invalid,item)
         else
-            moveto[item[2]]=item[1]
+            @inbounds moveto[item[2]]=item[1]
         end
     end
     #iterate over all invalid, set their destination to be same as source (no move), as well as correct already proposed move in moveto
@@ -97,15 +112,17 @@ function removeConflicts(moves)
     return moveto
 end
 
-function generatemoves(grid,checkfirst)
-    return removeConflicts∘proposedmoves(grid,checkfirst)
+function generatemoves(grid::Array{Bool,2},checkfirst)
+    return (removeConflicts∘proposedmoves)(grid,checkfirst)
 end
 
-function makeMoves!(grid,newgrid,moves)
+function makeMoves!(grid::Array{Bool,2},newgrid::Array{Bool,2},moves)
     for item in moves
         to,from=item
-        newgrid[to[1],to[2]]=true
-        grid[from[1],from[2]]=false
+        ty,tx=to
+        fy,fx=from
+        @inbounds newgrid[ty,tx]=true
+        @inbounds grid[fy,fx]=false
     end
 end
 
@@ -113,6 +130,7 @@ function step!(grid,newgrid,checkfirst)
     movesfromto=proposedmoves(grid,checkfirst)
     movestofrom=removeConflicts(movesfromto)
     makeMoves!(grid,newgrid,movestofrom)
+    return movestofrom
 end
 
 function smallestRectangle(grid)
@@ -120,7 +138,7 @@ function smallestRectangle(grid)
     sx,sy,bx,by=sizey,sizex,0,0
     for y=1:sizey,x=1:sizex
 
-        if grid[y,x]
+        @inbounds if grid[y,x]
             sx=min(sx,x)
             sy=min(sy,y)
             bx=max(bx,x)
@@ -131,10 +149,18 @@ function smallestRectangle(grid)
     return @view grid[sy:by,sx:bx]
 end
 
+function noMoves(movesdict)
+    for (key,val) in movesdict
+        if !(key==val)
+            return false
+        end
+    end
+    return true
+end
 
-function solve(out,steps)
+function solve(out::String,steps::Int64)::Int64
     checkfirst=N
-    grid=fillgrid(out,4)
+    grid=fillgrid(out,2)
     
     sizey,sizex=size(grid)
     newgrid=fill(false,sizey,sizex)
@@ -150,7 +176,33 @@ function solve(out,steps)
     return ans
 end
 
+function solve2(out::String)::Int64
+    checkfirst=N
+    grid=fillgrid(out,4)
+    sizey,sizex=size(grid)
+    newgrid=fill(false,sizey,sizex)
+    iter=1
+    while true
+        moves=step!(grid,newgrid,checkfirst)
+        if noMoves(moves)
+            break
+        end
+        grid,newgrid=newgrid,grid
+        checkfirst=Direction(checkorder(checkfirst)[2])
+        iter+=1
+    end
+    return iter
+end
+
+
 f=open("input.txt")
 out=read(f,String)
 
+using StatProfilerHTML
+using BenchmarkTools
+using TimerOutputs
+#@btime display(solve(out,100))
+#@show @btime solve($out,$100)
 display(solve(out,10))
+
+display(solve2(out))
