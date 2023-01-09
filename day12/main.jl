@@ -83,20 +83,80 @@ function astar(startindex::Tuple{Int64,Int64},endindex::Tuple{Int64,Int64},grid)
 end
 
 
-function solve(out::String)
-    start= findfirst.('S',out)
-    endi= findfirst.('S',out)
+Base.@pure function dijkstra(startindex::Tuple{Int64,Int64},grid)
+    #distances=fill(10000,length(grid),length(grid[1]))
+    previous=Dict{Tuple{Int64,Int64},Tuple{Int64,Int64}}()
+    visited=[]
+    q=Vector{Tuple{Int64,Int64}}()
+    push!(q,startindex)
     
+    distances=Dict{Tuple{Int64,Int64},Int64}()
+
+    distances[startindex]=0
+    while length(q)>0
+        currentnode=popfirst!(q)
+        if currentnode in visited
+            #pass
+        else
+            push!(visited,currentnode)
+            for item in filter(x->!(x in visited) ,generateMoves(currentnode,grid))
+                push!(q,item)
+                distance=distances[currentnode]+1
+                if !(item in keys(distances)) distances[item]=distance 
+                elseif distance < distances[item[1],item[2]]
+                    distances[item[1],item[2]]=distance
+                    previous[item]=currentnode
+                end
+            end
+        end
+    end
+    return distances
+end
+        
+
+function solve(out::String)
     grid=collect.(split(out,"\n"))
     sizes=length(grid),length(grid[1])
-    d(index)=Int(ceil(index/(sizes[2]))),((index-1)%sizes[2])+1
-    startindex=d(start)
-    endindex=d(endi)
-    return astar(startindex,endindex,grid)
+    strippedout=replace(out,'\n'=>"")
+    starts=findall(x->x=='S',strippedout)[1]
+    ends=findall(x->x=='E',strippedout)[1]
+    d(index::Int64)::Tuple{Int64,Int64}=Int(ceil(index/(sizes[2]))),((index-1)%sizes[2])+1
+    endindex=d(ends)
+    startindex=d(starts)
+    distances=dijkstra(startindex,grid)
+    return distances[endindex[1],endindex[2]]
     #return path(startindex,Set{Tuple{Int64,Int64}}([]),grid,0)
 end
 
+function solveastar(out::String)
+    strippedout=replace(out,'\n'=>"")
+    starts=findall(x->x=='S',strippedout)[1]
+    ends=findall(x->x=='E',strippedout)[1]
+    grid=collect.(split(out,"\n"))
+    sizes=length(grid),length(grid[1])
+    d(index)=Int(ceil(index/(sizes[2]))),((index-1)%sizes[2])+1
+    endindex=d(ends)
+    startindex=d(starts)
+    return astar(startindex,endindex,grid)
+end
 
+using ProgressMeter
+function solve2(out::String)::Int64
+    strippedout=replace(out,'\n'=>"")
+    starts=findall(x->x=='a',strippedout)
+    ends=findall(x->x=='E',strippedout)[1]
+    grid=collect.(split(out,"\n"))
+    sizes=length(grid),length(grid[1])
+    d(index::Int64)::Tuple{Int64,Int64}=Int(ceil(index/(sizes[2]))),((index-1)%sizes[2])+1
+    endindex=d(ends)
+    starts2=d.(starts)
+    distances::Vector{Int64}=[]
+    Threads.@threads for item in starts2
+        push!(distances,dijkstra(item,grid)[endindex[1],endindex[2]])
+    end
+    solution=minimum(distances)::Int64
+    return solution
+end
 using Test
 
 file=open("example.txt","r")
@@ -138,12 +198,24 @@ file=open("example.txt","r")
 out=read(file,String)
 
 @test solve(out)==31
+@test solve2(out)==29
+@test solveastar(out)==31
+
+using BenchmarkTools
+display(@benchmark solve($out))
+display(@benchmark solve2($out))
+
+#display(@benchmark solveastar($out))
+
+
+
 close(file)
 
-
 file=open("input.txt","r")
-out=read(file,String)
+out2=read(file,String)
 
+#using StatProfilerHTML
+@benchmark  solve($out2)
 
-display(solve(out))
+#display(solve2(out))
 
