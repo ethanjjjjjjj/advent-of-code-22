@@ -38,19 +38,62 @@ Base.@pure function path(location::Tuple{Int64,Int64},visited::Set{Tuple{Int64,I
     if(length(unvisited))==0 return 100000 end
     lengths=[]
 
-    for move in unvisited
+    Threads.@threads for move in collect(unvisited)
         push!(lengths,path(move,visited,grid,movenum+1))
     end
     return minimum(lengths)
 end
 
+#with help from https://www.geeksforgeeks.org/a-search-algorithm/
+function astar(startindex::Tuple{Int64,Int64},endindex::Tuple{Int64,Int64},grid)
+    openL::Vector{Tuple{Int64,Int64}}=[startindex]
+    closedL::Vector{Tuple{Int64,Int64}}=[]
+    nodes=Dict{Tuple{Int64,Int64},Tuple{Int64,Float32,Float32}}() # position (y,x)=>(g,h,f)
+    #g(x)=sum(x.-startindex)
+    h(x)=sqrt(sum((endindex.-x).^2))
+    #valstuple(x)=(g(x),h(x),f(x))
+    nodes[startindex]=(0,0,0)
+    currentnode::Tuple{Int64,Int64}=startindex
+    while length(openL)!=0
+        item,itemindex=findmin(map(x->x[3],[getindex(nodes,item) for item in openL])) #look up lowest f of items in openL
+        currentnode=openL[itemindex]
+        currentnodevals=nodes[currentnode]
+        deleteat!(openL,itemindex) #remove said item from openL
+        successors=generateMoves(currentnode,grid)
+        for item in successors
+            successorvals=(currentnodevals[1]+1,h(item),currentnodevals[1]+1+h(item))
+            if grid[item[1]][item[2]]=='E'
+                return currentnodevals[1]+1
+            end
+            if (item in openL) && nodes[item][3]<successorvals[3]
+                #do nothign
+            else
+                nodes[item]=successorvals
+            end
+            if (item in closedL) && nodes[item][3]<successorvals[3]
+                deleteat!(closedL,findall(x->x==item,closedL))
+                push!(openL,item)
+            elseif !(item in openL) && !(item in closedL)
+                push!(openL,item)
+                nodes[item]=successorvals
+            end 
+        end
+        push!(closedL,currentnode)
+    end
+end
+
+
 function solve(out::String)
     start= findfirst.('S',out)
+    endi= findfirst.('S',out)
+    
     grid=collect.(split(out,"\n"))
     sizes=length(grid),length(grid[1])
     d(index)=Int(ceil(index/(sizes[2]))),((index-1)%sizes[2])+1
     startindex=d(start)
-    return path(startindex,Set{Tuple{Int64,Int64}}([]),grid,0)
+    endindex=d(endi)
+    return astar(startindex,endindex,grid)
+    #return path(startindex,Set{Tuple{Int64,Int64}}([]),grid,0)
 end
 
 
