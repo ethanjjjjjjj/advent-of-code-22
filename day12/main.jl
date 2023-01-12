@@ -83,10 +83,11 @@ function astar(startindex::Tuple{Int64,Int64},endindex::Tuple{Int64,Int64},grid)
 end
 
 
+
 Base.@pure function dijkstra(startindex::Tuple{Int64,Int64},grid)
     #distances=fill(10000,length(grid),length(grid[1]))
     previous=Dict{Tuple{Int64,Int64},Tuple{Int64,Int64}}()
-    visited=[]
+    visited=Set()
     q=Vector{Tuple{Int64,Int64}}()
     push!(q,startindex)
     
@@ -103,8 +104,8 @@ Base.@pure function dijkstra(startindex::Tuple{Int64,Int64},grid)
                 push!(q,item)
                 distance=distances[currentnode]+1
                 if !(item in keys(distances)) distances[item]=distance 
-                elseif distance < distances[item[1],item[2]]
-                    distances[item[1],item[2]]=distance
+                elseif distance < distances[item]
+                    distances[item]=distance
                     previous[item]=currentnode
                 end
             end
@@ -151,71 +152,29 @@ function solve2(out::String)::Int64
     endindex=d(ends)
     starts2=d.(starts)
     distances::Vector{Int64}=[]
-    Threads.@threads for item in starts2
-        push!(distances,dijkstra(item,grid)[endindex[1],endindex[2]])
+    for item in starts2
+        results=dijkstra(item,grid)
+        if !(endindex in keys(results))
+            push!(distances,10000)
+        else
+            push!(distances,results[endindex])
+        end
     end
     solution=minimum(distances)::Int64
     return solution
 end
-using Test
-
-file=open("example.txt","r")
-out=read(file,String)
-start= findfirst.('S',out)
-out=collect.(split(out,"\n"))
-sizes=length(out),length(out[1])
-d(index)=Int(ceil(index/(sizes[2]))),((index-1)%sizes[2])+1
-startindex=d(start)
-close(file)
-
-@test canMakeMove('m','n')==true
-@test canMakeMove('m','o')==false
-@test canMakeMove('m','a')==true
-@test canMakeMove('S','a')==true
-@test canMakeMove('S','b')==true
-@test canMakeMove('S','c')==false
-@test canMakeMove('S','E')==false
-@test canMakeMove('y','E')==true
-@test canMakeMove('x','E')==false
-
-@test canMakeMove('c','c')
-
-@test genNeighbours((1,1),out)==Set([(1,2),(2,1)])
-@test genNeighbours((2,2),out)==Set([(1,2),(2,1),(3,2),(2,3)])
-@test genNeighbours((3,3),out)==Set([(2,3),(3,2),(4,3),(3,4)])
-@test genNeighbours((4,1),out)==Set([(5,1),(3,1),(4,2)])
-
-
-@test generateMoves(startindex,out)==Set([(1,2),(2,1)])
-@test generateMoves((2,2),out)==Set([(1,2),(2,1),(3,2),(2,3)])
-
-@test generateMoves((3,3),out)==Set([(2,3),(3,2),(4,3)])
-@test generateMoves((3,1),out)==Set([(2,1),(4,1)])
-@test generateMoves((4,1),out)==Set([(5,1),(3,1)])
-
-
-file=open("example.txt","r")
-out=read(file,String)
-
-@test solve(out)==31
-@test solve2(out)==29
-@test solveastar(out)==31
-
-using BenchmarkTools
-display(@benchmark solve($out))
-display(@benchmark solve2($out))
-
-#display(@benchmark solveastar($out))
 
 
 
-close(file)
 
 file=open("input.txt","r")
 out2=read(file,String)
 
-#using StatProfilerHTML
-@benchmark  solve($out2)
+display(solve(out2))
+display(solve2(out2))
+
+#using ProfileView
+#@profview  solve(out2)
 
 #display(solve2(out))
 
