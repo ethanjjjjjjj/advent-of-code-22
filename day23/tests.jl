@@ -19,9 +19,11 @@ testgrid[7,6]=true
 expectedsize=(12,10)
 esy,esx=expectedsize
 
+@testset "grid properties" begin
 @test length(out)==35
 @test size(grid)==expectedsize
 @test grid==testgrid
+end
 
 
 
@@ -38,22 +40,25 @@ testgrid2[6,6]=true
 
 
 #test moves before they are tested for invalid
+@testset "generate moves" begin
 generatedmoves=proposedmoves(copy(grid2),N)
 @test generatedmoves[(4,5)]==(4,5).+movetranslations[N]
 @test generatedmoves[(5,5)]==(5,5).+movetranslations[S]
 @test generatedmoves[(4,6)]==(4,6).+movetranslations[N]
 @test generatedmoves[(7,5)]==(7,5).+movetranslations[N]
 @test generatedmoves[(7,6)]==(7,6).+movetranslations[N]
+end
 
 
 #test one whole step
+@testset "step" begin
 @test begin step!(grid2,newgrid,N) ; newgrid end == testgrid2
-
+end
 
 
 
 #test number of elves does not change
-begin
+@testset "consistent elves" begin
     f=open("example2.txt")
     out=read(f,String)
 
@@ -75,7 +80,9 @@ end
 f=open("example.txt")
 out=read(f,String)
 
+@testset "solution" begin
 @test solve(out,10)==110
+end
 
 # performance
 
