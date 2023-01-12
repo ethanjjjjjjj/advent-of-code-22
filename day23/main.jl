@@ -198,9 +198,6 @@ end
 f=open("input.txt")
 out=read(f,String)
 
-using StatProfilerHTML
-using BenchmarkTools
-using TimerOutputs
 #@btime display(solve(out,100))
 #@show @btime solve($out,$100)
 display(solve(out,10))
