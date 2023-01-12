@@ -57,10 +57,6 @@ end
     out=read(file,String)
     @test solve(out)==517
     @test solve2(out)==512
-    @test solve2(out)==512
-    @test solve2(out)==512
-    @test solve2(out)==512
-    @test solve2(out)==512
     
 
 end

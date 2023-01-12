@@ -44,46 +44,6 @@ Base.@pure function path(location::Tuple{Int64,Int64},visited::Set{Tuple{Int64,I
     return minimum(lengths)
 end
 
-#with help from https://www.geeksforgeeks.org/a-search-algorithm/
-function astar(startindex::Tuple{Int64,Int64},endindex::Tuple{Int64,Int64},grid)
-    openL::Vector{Tuple{Int64,Int64}}=[startindex]
-    closedL::Vector{Tuple{Int64,Int64}}=[]
-    nodes=Dict{Tuple{Int64,Int64},Tuple{Int64,Float32,Float32}}() # position (y,x)=>(g,h,f)
-    #g(x)=sum(x.-startindex)
-    h(x)=sqrt(sum((endindex.-x).^2))
-    #valstuple(x)=(g(x),h(x),f(x))
-    nodes[startindex]=(0,0,0)
-    currentnode::Tuple{Int64,Int64}=startindex
-    while length(openL)!=0
-        item,itemindex=findmin(map(x->x[3],[getindex(nodes,item) for item in openL])) #look up lowest f of items in openL
-        currentnode=openL[itemindex]
-        currentnodevals=nodes[currentnode]
-        deleteat!(openL,itemindex) #remove said item from openL
-        successors=generateMoves(currentnode,grid)
-        for item in successors
-            successorvals=(currentnodevals[1]+1,h(item),currentnodevals[1]+1+h(item))
-            if grid[item[1]][item[2]]=='E'
-                return currentnodevals[1]+1
-            end
-            if (item in openL) && nodes[item][3]<successorvals[3]
-                #do nothign
-            else
-                nodes[item]=successorvals
-            end
-            if (item in closedL) && nodes[item][3]<successorvals[3]
-                deleteat!(closedL,findall(x->x==item,closedL))
-                push!(openL,item)
-            elseif !(item in openL) && !(item in closedL)
-                push!(openL,item)
-                nodes[item]=successorvals
-            end 
-        end
-        push!(closedL,currentnode)
-    end
-end
-
-
-
 Base.@pure function dijkstra(startindex::Tuple{Int64,Int64},grid)
     #distances=fill(10000,length(grid),length(grid[1]))
     previous=Dict{Tuple{Int64,Int64},Tuple{Int64,Int64}}()
@@ -129,18 +89,6 @@ function solve(out::String)
     #return path(startindex,Set{Tuple{Int64,Int64}}([]),grid,0)
 end
 
-function solveastar(out::String)
-    strippedout=replace(out,'\n'=>"")
-    starts=findall(x->x=='S',strippedout)[1]
-    ends=findall(x->x=='E',strippedout)[1]
-    grid=collect.(split(out,"\n"))
-    sizes=length(grid),length(grid[1])
-    d(index)=Int(ceil(index/(sizes[2]))),((index-1)%sizes[2])+1
-    endindex=d(ends)
-    startindex=d(starts)
-    return astar(startindex,endindex,grid)
-end
-
 using ProgressMeter
 function solve2(out::String)::Int64
     strippedout=replace(out,'\n'=>"")
@@ -164,17 +112,8 @@ function solve2(out::String)::Int64
     return solution
 end
 
-
-
-
 file=open("input.txt","r")
 out2=read(file,String)
 
 display(solve(out2))
 display(solve2(out2))
-
-#using ProfileView
-#@profview  solve(out2)
-
-#display(solve2(out))
-
